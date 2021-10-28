@@ -10,5 +10,5 @@ FILES_${PN} += "\
 INSANE_SKIP_${PN} += "dev-so"
 
 do_install_append_xilinx-versal() {
-    mv ${D}/usr/lib ${D}${libdir}
+    mv ${D}/usr/lib ${D}${libdir} || true
 }
