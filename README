@@ -1,0 +1,283 @@
+Xilinx VERSAL Board Support Package
+
+1. About this document
+======================
+This document provides common and non-hardware specific information.
+Please refer to README.hardware for hardware specific information.
+
+Dependencies
+------------
+This layer depends on the oe-core version supplied with Wind River Linux
+and the wrlinux layer.
+
+
+Maintenance
+-----------
+This layer is maintained by Wind River Systems, Inc.
+Contact <support@windriver.com> or your support representative for more
+information on submitting changes.
+
+
+Building the xilinx-versal layer
+-----------------------------
+This layer and wrlinux layer should be added to bblayers.conf.
+
+
+License
+-------
+Copyright (C) 2021 Wind River Systems, Inc.
+
+Source code included in the tree for individual recipes is under the LICENSE
+stated in the associated recipe (.bb file) unless otherwise stated.
+
+The metadata is under the following license unless otherwise stated.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+2. BSP Kernel and Distros
+=========================
+
+The following table summarizes the valid Wind River Linux distros for this BSP.
+'Y' in each content cell stands for supported; 'N' stands for not supported:
+
+  +--------------+-------------+-------------+------------------+
+  | valid/distro |   wrlinux   | wrlinux-cgl | wrlinux-std-sato |
+  +--------------+-------------+-------------+------------------+
+  |    valid     |      Y      |      N      |         Y        |
+  +--------------+-------------+-------------+------------------+
+
+For the supported kernel type for this BSP, check the TARGET_SUPPORTED_KTYPES
+by running 'bitbake -e | grep "^TARGET_SUPPORTED_KTYPES"'.
+
+
+3. Board Specific Patches
+=========================
+
+To get a list of patches applied to the kernel specific to this BSP,
+along with patch descriptions, use git to see what changed on the default
+kernel (git whatchanged <kernel_type>..<bsp_name>). For example:
+
+	# cd path_to_project/tmp-glibc/work-shared/xilinx-versal/kernel-source
+	# git whatchanged v5.2/standard/wr-base..HEAD
+
+
+4. Boot Instructions
+====================
+
+You must load the DTB (device tree blob) into the target's memory
+prior to booting the kernel Image. The DTB file can be found in the export
+directory after building a project, or you can generate it manually with the
+following commands:
+
+        # bitbake -c devshell virtual/kernel
+        # vim arch/arm64/boot/dts/xilinx/versal/the_file_you_edit*.dts[i]
+		# make xilinx/versal/system-top.dtb
+
+The resulting DTB file can be found here:
+path_to_project/build/tmp-glibc/work/<bsp name>-wrs-linux/linux-yocto/<kernel version>/linux-<bsp name>-<kernel type>-build/arch/arm64/boot/dts/xilinx/versal/
+
+Assuming all files can be downloaded from a network, deploy your board and host
+properly to ensure your network is available from the board.
+
+4.1 Boot from SD card
+---------------------
+
+4.1.1 Deploy kernel, DTB image and file system image into your SD card
+----------------------------------------------------------------------
+
+Refer to the bootloader/README for information on how to make an SD
+bootable card. Deploy the kernel image, DTB image and file system image as follows:
+
+	# mount /dev/mmcblk0p2 /mnt/sd
+	# tar -C /mnt/sd -jxf wrlinux-image-std-xilinx-versal.tar.bz2 --numeric-owner
+	# umount /mnt/sd
+	# mount /dev/mmcblk0p1 /mnt/sd
+	# cp path_to_Image /mnt/sd/boot
+	# cp path_to_system-top.dtb /mnt/sd/boot
+	# umount /mnt/sd
+
+4.1.2 Set the u-boot environment variables and boot from SD card
+----------------------------------------------------------------
+
+Run the following command to load the kernel image and DTB image:
+
+	=> setenv bootargs console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait earlycon=pl011,mmio32,0xFF000000,115200n8 clk_ignore_unused
+	=> mmc rescan
+	=> fatload mmc 0 0x10000000 system-top.dtb
+	=> fatload mmc 0 0x11800000 Image
+	=> booti 0x11800000 - 0x10000000
+
+4.2 NFS boot
+------------
+
+4.2.1 Setup configuration your NFS TFTP server, and deploy the rootfs tarball
+-----------------------------------------------------------------------------
+
+	# sudo tar jxf wrlinux-image-std-sato-xilinx-versal.tar.bz2 -C path_to_rootfs
+
+4.2.2 Set the u-boot environment variables and boot from NFS
+------------------------------------------------------------
+
+	=> setenv bootargs console=ttyAMA0 earlycon=pl011,mmio32,0xFF000000,115200n8 clk_ignore_unused root=/dev/nfs rw nfsroot=serverip:path_root_rootfs ip=dhcp
+	=> tftpboot 0x11800000 Image; tftpboot 0x10000000 system-top.dtb; booti 0x11800000 - 0x10000000
+
+
+5. Features
+===========
+
+5.1 CAN
+-------
+
+# configure can0 in the speed of 800000
+   $ ip link set can0 up type can bitrate 800000
+   $ ip -details link show can0
+
+# send out a single frame
+   $ cansend can0 1F334455#1122334455667788
+   $ ip link set can0 down
+
+5.2. suspend/resume
+-------------------
+
+"Suspend-To-RAM" is supportted by running below command:
+
+	# echo mem > /sys/power/state
+
+Wakeup system, customer can use network, rtc, console and so on, it depends on concrete scenario.
+Below is an example of wakeing up by console.
+Run below command before entering suspend status.
+	# echo enabled > echo enabled > /sys/devices/platform/axi/ff000000.serial/tty/ttyAMA0/power/wakeup
+And then, press Enter key in console window.
+
+6. kexec and kdump
+===================
+
+You need to add feature/kexec support as follow:
+
+	./wrlinux-x/setup.sh --machines xilinx-versal --templates feature/kexec,feature/kdump
+
+6.1 kexec
+---------
+
+	kexec -l  /root/Image.gz --append="`cat /proc/cmdline`"
+	kexec -e
+
+6.2 kdump
+---------
+
+Add crashkernel=512M to the kernel cmdline
+   kexec -p /root/Image.gz --append="$your-bootcmd"
+   echo c > /proc/sysrq-trigger
+
+
+7. WIC Notes
+============
+
+User can use the OpenEmbedded Image Creator to create the properly partitioned
+image on a SD card. It generates partitioned images from existing OpenEmbedded
+build artifacts. Please refer to the following URL for more detailed partition
+information about WIC:
+
+https://www.yoctoproject.org/docs/2.6/mega-manual/mega-manual.html#creating-partitioned-images-using-wic
+
+After having built your project, a partitioned WIC image will be created in the
+deploy folder as follows:
+
+  path_to_your_project/build/tmp-glibc/deploy/images/xilinx-versal/wrlinux-image-<rootfs_type>-xilinx-versal.wic
+
+There are two partitions in this WIC images, the first one is to hold the boot
+images, the second is the related root file system.
+
+7.1 An example to deploy bootloader into the first partition
+------------------------------------------------------------
+
+1) Deploy the created WIC image into SD card(/dev/sdx) in your host machine.
+
+   $ sudo dd if=wrlinux-image-<rootfs_type>-xilinx-versal.wic of=/dev/sdx
+
+2) Download binary bootloader from the vendor website, and deploy BOOT.BIN into
+   /dev/sdx1
+
+   $ sudo mount /dev/sdx1 path_to_sdx1
+   $ cp -r path_to_your_bootloader/BOOT.BIN path_to_sdx1
+   $ sync; sudo umount path_to_sdx1
+
+7.2 Boot the board from the WIC SD card
+---------------------------------------
+
+Insert the SD card into the board and power on, then set the proper u-boot
+environment parameters to boot the board, please refer to section 4 for more
+information.
+
+Board can boot automatically by set the below uboot environment variables:
+
+=> setenv bootfile Image; setenv fdtfile system-top.dtb;  setenv loadaddr 0x00200000; setenv fdtaddr 0x00001000
+
+=> setenv bootargs 'root=/dev/mmcblk0p2 rw console=ttyAMA0 earlycon=pl011,mmio32,0xFF000000,115200n8 clk_ignore_unused rootwait'
+
+=> setenv bootcmd 'fatload mmc 0:1 $loadaddr $bootfile; fatload mmc 0:1 $fdtaddr $fdtfile; booti $loadaddr - $fdtaddr rootwait'
+
+=> saveenv; run bootcmd;
+
+
+8. System Monitor
+==================
+
+System monitor includes PL monitor and PS monitor.
+Each system monitor measures voltage and temperature to provide information and alarms
+to other parts of the system including the PMU, RPU, and APU processors.
+
+Customer could check the detail system monitor interfaces with below command:
+	# ls -la /sys/bus/iio/devices/iio:device0
+
+9. XRT & Zocl
+======
+
+9.1 Introduction
+----------------
+Xilinx Runtime (XRT) is implemented as as a combination of userspace and kernel
+driver components. XRT supports both PCIe based boards like U30, U50, U200,
+U250, U280, VCK190 and MPSoC based embedded platforms. XRT provides a
+standardized software interface to Xilinx FPGA. The key user APIs are defined in
+xrt.h header file.
+
+Zocl kernel module provides the ioctl interfaces for interacting with Xilinx
+FPGA platforms(Zynq/ZynqMP/Versal). Main interfaces are infined in zynq_ioctl.h
+file.
+
+9.2 Limitations
+---------------
+XRT includes source code for ERT firmware. It needs to be compiled with the
+MicroBlaze GCC compiler. While this compiler is not integrated in WindRiver
+build system by now, so those codes will be ignored.
+
+The luck thing is, one can compile the whole XRT codes following the Xilinx
+official guidances, and copy the corresponding firmware files to the deployment
+system. Check https://xilinx.github.io/XRT/2021.1/html/build.html for more
+information.
+
+
+10. Multilib
+============
+
+By default, this BSP is configured as a 64-bit kernel and 64-bit userspace.
+If a full 32-bit filesystem is necessary, use the prefix "lib32-" before
+the expected target image as follows:
+
+	# bitbake lib32-wrlinux-image-std

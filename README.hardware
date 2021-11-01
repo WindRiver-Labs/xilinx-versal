@@ -1,0 +1,98 @@
+Xilinx Versal Board Support Package
+
+
+Table of Contents
+=================
+
+1. Supported Boards
+2. Change History
+3. BSP Features
+4. BSP Notes
+
+
+1. Supported Boards
+===================
+
+This BSP supports the following boards:
+
+  + Xilinx Versal EK-VCK190-G-ED Board : VC1902 processor, Rev A04.2 board.
+
+2. Change History
+=================
+
+  - 2021/10 (LINUXPG-796): WindRiver LTS19 Support: Add Xilinx Versal AI BSP support for vck190 based on xlnx_rebase_v5.4
+
+
+3. BSP Features
+===============
+
+3.1 Supported Features
+----------------------
+
+The following BSP features are validated and supported on boards where
+the corresponding h/w features exist.
+
+  o General Platform
+
+  o Bus
+	+ CAN: NXP TJA1057GT/3J
+	+ I2C: Cadence 
+	+ QSPI: X-EBM-01
+	+ USB: Host/Gadget/OTG mode
+
+  o Network
+	+ MACB: Gigabits Controller
+	+ PHY: Fixed MDIO
+
+  o Storage
+	+ NOR Flash
+	+ SD/MMC:
+
+  o Power Mgmt
+	+ CPU hotplug
+	+ CPU Frequency
+
+  o Misc Devices
+	+ GPIO: On-Chip general purpose I/O peripheral
+	+ EDAC versal memory controller
+	+ INA2xx
+	+ RTC
+	+ UART
+
+3.2 Patch integrated and Unsupported Features
+---------------------------------------------
+
+The following features are not validated:
+
+  x CPU IDLE: WFI mode
+  x Two HDMI ports
+  x 1x2 zSFP/SFP+ connector
+  x 1 zQSFP connector
+  x SMMU
+  x FPGA Mezzanine Card Interface
+  x 8-lane PCIe edge connector
+  x DMA Engine: The enhanced direct memory access (EDMA) controller
+
+Please refer to BSP notes for more information.
+
+4. BSP Notes
+============
+
+4.1 Validated Board Info
+------------------------
+
+This BSP is only validated in following environment. If you use this BSP
+in a different environment it may possibly have some issues.
+
+	Processor:              Versal VC1902
+	Board Revision:	        EK-VCK190-G-ED
+	BootLoader:             U-Boot
+	BootLoader Version:     U-Boot 2021.1
+
+4.2 Hardware features fanned out from PL
+----------------------------------------
+
+Most of these features are not validated since they need a special TRD firmware
+bootloader with the related PL bitstream, generally speaking, you can download
+the specific Xilinx xapp from the vendor website with your Xilinx account,
+like xapp1305 for SFP interface.
