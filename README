@@ -152,19 +152,6 @@ Run the following command to load the kernel image and DTB image:
    $ cansend can0 1F334455#1122334455667788
    $ ip link set can0 down
 
-5.2. suspend/resume
--------------------
-
-"Suspend-To-RAM" is supportted by running below command:
-
-	# echo mem > /sys/power/state
-
-Wakeup system, customer can use network, rtc, console and so on, it depends on concrete scenario.
-Below is an example of wakeing up by console.
-Run below command before entering suspend status.
-	# echo enabled > echo enabled > /sys/devices/platform/axi/ff000000.serial/tty/ttyAMA0/power/wakeup
-And then, press Enter key in console window.
-
 6. kexec and kdump
 ===================
 
