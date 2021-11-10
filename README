@@ -233,6 +233,7 @@ to other parts of the system including the PMU, RPU, and APU processors.
 Customer could check the detail system monitor interfaces with below command:
 	# ls -la /sys/bus/iio/devices/iio:device0
 
+
 9. XRT & Zocl
 ======
 
@@ -248,16 +249,45 @@ Zocl kernel module provides the ioctl interfaces for interacting with Xilinx
 FPGA platforms(Zynq/ZynqMP/Versal). Main interfaces are infined in zynq_ioctl.h
 file.
 
-9.2 Limitations
+9.2 Declarations
 ---------------
-XRT includes source code for ERT firmware. It needs to be compiled with the
-MicroBlaze GCC compiler. While this compiler is not integrated in WindRiver
-build system by now, so those codes will be ignored.
+XRT and Zocl are not supported by Wind River LTS 19 standard product because of
+the license constraints.
 
-The luck thing is, one can compile the whole XRT codes following the Xilinx
-official guidances, and copy the corresponding firmware files to the deployment
-system. Check https://xilinx.github.io/XRT/2021.1/html/build.html for more
-information.
+User can build, compile and deploy xrt and zocl package or module at their own
+responsibility in compliance with any licenses or legal requirements for content
+used.
+
+9.3 Instructions for building xrt and zocl.
+-------------------------------------------
+Since xrt and zocl are not supported by Wind River LTS 19 standard product, the
+building of them will end up with build errors.
+
+To build xrt and zocl, you need to add them to the whitelist, add below lines to
+conf/local.conf file.
+PNWHITELIST_xilinx += 'xrt'
+PNWHITELIST_xilinx += 'zocl'
+
+You may also need to enable the network to get their source codes, add below
+line to conf/local.conf to enable the network support.
+BB_NO_NETWORK = '0'
+
+And if you want to add xrt and zocl module to the final rootfs, you need add
+below lines to conf/local.conf file.
+IMAGE_INSTALL += "xrt"
+IMAGE_INSTALL += "zocl kernel-module-zocl"
+
+9.4 Other liminations
+----------------------------
+XRT includes source code for ERT firmware. It needs to be compiled with the
+MicroBlaze GCC compiler, Well, Wind River build system doesn't support this
+compiler, the building of the counterpart codes will be ignored.
+
+To enable the full function of the XRT, user needs to install Xilinx Vitis™
+Software Platform and compile the source codes following Xilinx official
+guidances, and then copy the firmware files to the deployment system.
+
+Check https://xilinx.github.io/XRT/2021.1/html/build.html for more information.
 
 
 10. Multilib
